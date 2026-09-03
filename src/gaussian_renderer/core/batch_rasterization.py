@@ -70,7 +70,9 @@ def batch_render(
     fovy: np.ndarray,  # (Ncam,) degree
     bg_imgs: Optional[Tensor] = None,  # (Ncam, H, W, 3)
     y_up: bool = True,
-) -> Tuple[Tensor, Tensor]:
+    *,
+    return_alpha: bool = False,
+) -> Union[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor, Tensor]]:
 
     device = gaussians.device
 
@@ -136,11 +138,11 @@ def batch_render(
         width=width,
         height=height,
         sh_degree=sh_degree,
-        render_mode="RGB+D",
+        render_mode="RGB+ED" if return_alpha else "RGB+D",
         packed=False,
     )
 
-    # renders: (Ncam, H, W, 4) -> RGBD
+    # renders: (Ncam, H, W, 4) -> RGB and depth
 
     color_img = renders[..., :3]
     depth_img = renders[..., 3:4]
@@ -151,6 +153,8 @@ def batch_render(
 
         color_img.addcmul_(bg_imgs, 1.0 - alphas)
 
+    if return_alpha:
+        return color_img, depth_img, alphas
     return color_img, depth_img
 
 

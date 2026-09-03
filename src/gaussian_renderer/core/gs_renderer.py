@@ -189,7 +189,8 @@ class GSRenderer:
         fovy_arr: np.ndarray,
         bg_imgs: Optional[Tensor] = None,
         y_up: Optional[bool] = True,
-    ) -> Tuple[Tensor, Tensor]:
+        return_alpha: bool = False,
+    ) -> Union[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor, Tensor]]:
         """
         Pure rendering call using batch_render.
 
@@ -201,7 +202,18 @@ class GSRenderer:
             fovy_arr: (N_cams,) array of fov values
             bg_imgs: Optional[Tensor] = None
             y_up: Optional[bool] = True
+            return_alpha: Use expected depth and include accumulated opacity.
         Returns:
-            rgb_tensor, depth_tensor
+            RGB and depth, plus alpha when requested.
         """
-        return batch_render(self.gaussians, cam_pos, cam_xmat, height, width, fovy_arr, bg_imgs=bg_imgs, y_up=y_up)
+        return batch_render(
+            self.gaussians,
+            cam_pos,
+            cam_xmat,
+            height,
+            width,
+            fovy_arr,
+            bg_imgs=bg_imgs,
+            y_up=y_up,
+            return_alpha=return_alpha,
+        )
