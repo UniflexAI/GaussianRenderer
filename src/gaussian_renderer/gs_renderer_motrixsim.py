@@ -101,7 +101,8 @@ class GSRendererMotrixSim(GSRenderer):
         height: int,
         system_camera: Optional[Any] = None,
         y_up: bool = True,
-    ) -> Dict[int, Tuple[Tensor, Tensor]]:
+        return_alpha: bool = False,
+    ) -> Dict[int, Union[Tuple[Tensor, Tensor], Tuple[Tensor, Tensor, Tensor]]]:
 
         cam_pos_lst = []
         cam_xmat_lst = []
@@ -122,14 +123,27 @@ class GSRendererMotrixSim(GSRenderer):
                 cam_xmat_lst.append(Rotation.from_quat(cam_pose[3:7]).as_matrix().flatten())
                 fovy_lst.append(mx_model.cameras[cid].fovy)  # TODO: get actual fovy from MotrixSim camera
 
-        rgb_tensor, depth_tensor = self.render_batch(
-            np.array(cam_pos_lst), np.array(cam_xmat_lst), height, width, np.array(fovy_lst), y_up=y_up
+        rendered = self.render_batch(
+            np.array(cam_pos_lst),
+            np.array(cam_xmat_lst),
+            height,
+            width,
+            np.array(fovy_lst),
+            y_up=y_up,
+            return_alpha=return_alpha,
         )
+        if return_alpha:
+            rgb_tensor, depth_tensor, alpha_tensor = rendered
+        else:
+            rgb_tensor, depth_tensor = rendered
 
         batch_indices = {cid: i for i, cid in enumerate(cam_ids)}
 
         results = {}
         for cid, idx in batch_indices.items():
-            results[cid] = (rgb_tensor[idx], depth_tensor[idx])
+            if return_alpha:
+                results[cid] = (rgb_tensor[idx], depth_tensor[idx], alpha_tensor[idx])
+            else:
+                results[cid] = (rgb_tensor[idx], depth_tensor[idx])
 
         return results
